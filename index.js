@@ -19,6 +19,19 @@ exports.reject = function (rule) {
     newRule(rule);
 }
 
+exports.prerouting = function (rule) {
+    rule.target = 'DNAT';
+    if (!rule.action) rule.action = '-A';
+    newRule(rule);
+}
+
+exports.masquerade = function (rule) {
+    rule.target = 'MASQUERADE';
+    rule.not = true;
+    if (!rule.action) rule.action = '-A';
+    newRule(rule);
+}
+
 exports.list = function(chain, cb) {
     var rule = {
         list : true,
@@ -80,7 +93,8 @@ function iptablesArgs (rule) {
 
     if (rule.chain) args = args.concat([rule.action, rule.chain]);
     if (rule.protocol) args = args.concat(["-p", rule.protocol]);
-    if (rule.src) args = args.concat(["--src", rule.src]);
+    if (rule.src && !rule.not) args = args.concat(["--src", rule.src]);
+    if (rule.src && rule.not) args = args.concat(["!", "--src", rule.src]);
     if (rule.dst) args = args.concat(["--dst", rule.dst]);
     if (rule.sport) args = args.concat(["--sport", rule.sport]);
     if (rule.dport) args = args.concat(["--dport", rule.dport]);
@@ -88,6 +102,8 @@ function iptablesArgs (rule) {
     if (rule.out) args = args.concat(["-o", rule.out]);
     if (rule.target) args = args.concat(["-j", rule.target]);
     if (rule.list) args = args.concat(["-n", "-v"]);
+    if (rule.toDest) args = args.concat(["--to-destination", rule.toDest]);
+    if (rule.table) args = args.concat(["--table", rule.table]);
 
     return args;
 }
